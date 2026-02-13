@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.models.sqlalchemy_models import CPU, GPU, RAM, Motherboard
-from app.schemas.pydantic_models import (CPUCreate, CPUResponse, GPUResponse, GPUCreate, RAMCreate, RAMResponse, MotherboardCreate, MotherboardResponse)
+from app.models.sqlalchemy_models import CPU, GPU, RAM, Motherboard, PSUS
+from app.schemas.pydantic_models import (PSUResponse, PSUCreate, CPUCreate, CPUResponse, GPUResponse, GPUCreate, RAMCreate, RAMResponse, MotherboardCreate, MotherboardResponse)
 from app.database import get_db
 from typing import List
 
 router = APIRouter()
-
 
 
 #POST routes to add more components later on
@@ -45,6 +44,14 @@ def create_motherboard(mb: MotherboardCreate, db: Session = Depends(get_db)):
     db.refresh(db_mb)
     return db_mb
 
+
+@router.post('/psu', response_model=PSUResponse, tags=['components-post'])
+def create_psu(psu: PSUCreate, db: Session = Depends(get_db)):
+    db_psu = PSUS(**psu.dict())
+    db.add(db_psu)
+    db.commit()
+    db.refresh(db_psu)
+    return db_psu
 
 
 #PUT routes to update exisiting data
@@ -93,12 +100,28 @@ def update_ram(ram_id: str, ram: RAMCreate, db: Session = Depends(get_db)):
     return db_ram
 
 
+@router.put("/psu/{psu_id}", response_model=RAMResponse)
+def update_ram(ram_id: str, ram: RAMCreate, db: Session = Depends(get_db)):
+    db_ram = db.query(ram).filter(RAM.id == ram_id).first()
+
+    if db_ram is None:
+        raise HTTPException(status_code=404, detail='No such component found on DB')
+    
+    for key, value in ram.dict().items():
+        setattr(db_ram, key, value)
+
+    db.commit()
+    db.refresh(db_ram)
+    return db_ram
+
+
 #GET routes for user
 @router.get("/components", tags=['FetchAll'])
 def get_all_components(db: Session = Depends(get_db)):
     return {
-        'cpus': db.query(CPU).all(),
-        'gpus': db.query(GPU).all(),
-        'rams': db.query(RAM).all(),
-        'motherboards': db.query(Motherboard).all()
+        'cpus': db.query(CPU).limit(10).all(),
+        'gpus': db.query(GPU).limit(10).all(),
+        'rams': db.query(RAM).limit(10).all(),
+        'motherboards': db.query(Motherboard).limit(10).all(),
+        'psus': db.query(PSUS).limit(10).all()
     }
