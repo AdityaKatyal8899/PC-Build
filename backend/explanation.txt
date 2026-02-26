@@ -1,0 +1,21 @@
+SQLAlchemy Model (ORM model)
+
+Describes how data is stored and queried inside the database.
+
+Pydantic Model
+
+Describes a data contract for validation and serialization — nothing more.
+
+Request Schema
+
+Defines what the client is allowed to send to your API.
+
+Response Model
+
+Defines what the client is allowed to see from your API.
+
+Role assignment truths (this is critical)
+
+A Pydantic model becomes a request model
+
+When it is used as a function parameter in a route.
